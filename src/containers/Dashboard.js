@@ -95,10 +95,6 @@ export default class {
   };
 
   handleEditTicket(e, bill, bills) {
-    console.log("[[[[BEFORE]]]]");
-    console.log("this.id", this.id);
-    console.log("bill.id", bill.id);
-    console.log("this.counter", this.counter);
     // Si l'ID de la facture change, réinitialisez le compteur
     if (this.id !== bill.id) {
       this.counter = 0;
