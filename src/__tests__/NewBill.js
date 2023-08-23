@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/dom";
+import { screen, waitFor } from "@testing-library/dom";
 import NewBillUI from "../views/NewBillUI.js";
 import NewBill from "../containers/NewBill.js";
 import { ROUTES, ROUTES_PATH } from "../constants/routes.js";
@@ -82,6 +82,29 @@ describe("Given I am connected as an employee", () => {
       fireEvent.submit(screen.getByTestId("form-new-bill"));
 
       expect(onNavigate).toHaveBeenCalledWith(ROUTES_PATH["Bills"]);
+    });
+
+    test("When I upload a valid file type, no alert should be displayed and file should be processed", async () => {
+      // Mock the async response
+      mockStore.bills.create = jest.fn().mockResolvedValue({
+        fileUrl: "mockedUrl",
+        key: "mockedKey",
+      });
+
+      window.alert = jest.fn();
+
+      const fileInput = screen.getByTestId("file");
+      const mockedFile = new File(["(⌐□_□)"], "test.jpg", {
+        type: "image/jpeg",
+      });
+
+      fireEvent.change(fileInput, { target: { files: [mockedFile] } });
+
+      await waitFor(() => {
+        expect(window.alert).not.toHaveBeenCalled();
+        expect(newBill.fileUrl).toBe("mockedUrl");
+        expect(newBill.fileName).toBe("test.jpg");
+      });
     });
   });
 });
