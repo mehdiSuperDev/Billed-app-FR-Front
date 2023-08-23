@@ -73,7 +73,7 @@ describe("Given I am connected as an employee", () => {
   });
 
   //Test d'intégration GET
-  describe("Get Bills", () => {
+  describe("getBills()", () => {
     let bills;
     let mockedStore;
 
@@ -87,79 +87,77 @@ describe("Given I am connected as an employee", () => {
       });
     });
 
-    describe("getBills()", () => {
-      it("does nothing if store is not defined", async () => {
-        bills.store = null;
-        expect(await bills.getBills()).toBeUndefined();
+    it("does nothing if store is not defined", async () => {
+      bills.store = null;
+      expect(await bills.getBills()).toBeUndefined();
+    });
+
+    it("calls list() on this.store.bills()", async () => {
+      const spy = jest.spyOn(mockedStore.bills(), "list");
+      await bills.getBills();
+      expect(spy).toHaveBeenCalled();
+    });
+
+    it("formats the dates and statuses correctly", async () => {
+      const snapshot = await store.bills().list();
+      const result = await bills.getBills();
+
+      result.forEach((bill, index) => {
+        const originalDate = snapshot[index].date;
+        const originalStatus = snapshot[index].status;
+
+        expect(bill.date).toBe(`formatted-${originalDate}`);
+        expect(bill.status).toBe(`formatted-${originalStatus}`);
       });
+    });
 
-      it("calls list() on this.store.bills()", async () => {
-        const spy = jest.spyOn(mockedStore.bills(), "list");
-        await bills.getBills();
-        expect(spy).toHaveBeenCalled();
-      });
+    it("returns the original date and formatted status when date formatting fails", async () => {
+      const originalDate = "2001-01-01";
+      const originalStatus = "pending";
 
-      it("formats the dates and statuses correctly", async () => {
-        const snapshot = await store.bills().list();
-        const result = await bills.getBills();
-
-        result.forEach((bill, index) => {
-          const originalDate = snapshot[index].date;
-          const originalStatus = snapshot[index].status;
-
-          expect(bill.date).toBe(`formatted-${originalDate}`);
-          expect(bill.status).toBe(`formatted-${originalStatus}`);
-        });
-      });
-
-      it("returns the original date and formatted status when date formatting fails", async () => {
-        const originalDate = "2001-01-01";
-        const originalStatus = "pending";
-
-        // Mocker formatDate pour lever une erreur
-        jest
-          .spyOn(require("../app/format"), "formatDate")
-          .mockImplementationOnce(() => {
-            throw new Error("Format date failed");
-          });
-
-        //  Creer un mock de donnees avec les valeurs voulues
-        const mockBills = [
-          {
-            date: originalDate,
-            status: originalStatus,
-          },
-        ];
-
-        //Recupérer le mock de list() pour pouvoir le mocker
-        const mockBillsList = mockedStore.bills().list;
-        // Mocker list() pour renvoyer les donnees mockées
-        mockBillsList.mockResolvedValueOnce(mockBills);
-
-        //Mocker formatStatus pour le formattage spécifique
-        const doubleFormatMock = jest.fn((status) => `formatted-${status}`);
-
-        jest
-          .spyOn(require("../app/format"), "formatStatus")
-          .mockImplementationOnce(doubleFormatMock);
-
-        const bills = new Bills({
-          document: document,
-          onNavigate,
-          store: mockedStore,
-          localStorage: window.localStorage,
+      // Mocker formatDate pour lever une erreur
+      jest
+        .spyOn(require("../app/format"), "formatDate")
+        .mockImplementationOnce(() => {
+          throw new Error("Format date failed");
         });
 
-        const result = await bills.getBills();
+      //  Creer un mock de donnees avec les valeurs voulues
+      const mockBills = [
+        {
+          date: originalDate,
+          status: originalStatus,
+        },
+      ];
 
-        const failedBill = result[0];
+      //Recupérer le mock de list() pour pouvoir le mocker
+      const mockBillsList = mockedStore.bills().list;
+      // Mocker list() pour renvoyer les donnees mockées
+      mockBillsList.mockResolvedValueOnce(mockBills);
 
-        expect(failedBill.date).toBe(originalDate);
-        expect(failedBill.status).toBe(`formatted-${originalStatus}`);
+      //Mocker formatStatus pour le formattage spécifique
+      const doubleFormatMock = jest.fn((status) => `formatted-${status}`);
 
-        // Réinitialiser les mocks
-        jest.restoreAllMocks();
+      jest
+        .spyOn(require("../app/format"), "formatStatus")
+        .mockImplementationOnce(doubleFormatMock);
+
+      const bills = new Bills({
+        document: document,
+        onNavigate,
+        store: mockedStore,
+        localStorage: window.localStorage,
       });
+
+      const result = await bills.getBills();
+
+      const failedBill = result[0];
+
+      expect(failedBill.date).toBe(originalDate);
+      expect(failedBill.status).toBe(`formatted-${originalStatus}`);
+
+      // Réinitialiser les mocks
+      jest.restoreAllMocks();
     });
   });
 });
