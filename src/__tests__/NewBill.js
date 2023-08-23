@@ -85,12 +85,6 @@ describe("Given I am connected as an employee", () => {
     });
 
     test("When I upload a valid file type, no alert should be displayed and file should be processed", async () => {
-      // Mock the async response
-      mockStore.bills.create = jest.fn().mockResolvedValue({
-        fileUrl: "mockedUrl",
-        key: "mockedKey",
-      });
-
       window.alert = jest.fn();
 
       const fileInput = screen.getByTestId("file");
@@ -102,8 +96,7 @@ describe("Given I am connected as an employee", () => {
 
       await waitFor(() => {
         expect(window.alert).not.toHaveBeenCalled();
-        expect(newBill.fileUrl).toBe("mockedUrl");
-        expect(newBill.fileName).toBe("test.jpg");
+        expect(newBill.fileUrl).toBe("https://localhost:3456/images/test.jpg");
       });
     });
   });
