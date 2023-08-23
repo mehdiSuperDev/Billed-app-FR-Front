@@ -114,13 +114,51 @@ describe("Given I am connected as an employee", () => {
 
       it("returns the original date and formatted status when date formatting fails", async () => {
         const originalDate = "2001-01-01";
-        require("../app/format.js").formatDate.mockImplementationOnce(() => {
-          throw new Error("Formatting failed");
+        const originalStatus = "pending";
+
+        // Mocker formatDate pour lever une erreur
+        jest
+          .spyOn(require("../app/format"), "formatDate")
+          .mockImplementationOnce(() => {
+            throw new Error("Format date failed");
+          });
+
+        //  Creer un mock de donnees avec les valeurs voulues
+        const mockBills = [
+          {
+            date: originalDate,
+            status: originalStatus,
+          },
+        ];
+
+        //Recupérer le mock de list() pour pouvoir le mocker
+        const mockBillsList = mockedStore.bills().list;
+        // Mocker list() pour renvoyer les donnees mockées
+        mockBillsList.mockResolvedValueOnce(mockBills);
+
+        //Mocker formatStatus pour le formattage spécifique
+        const doubleFormatMock = jest.fn((status) => `formatted-${status}`);
+
+        jest
+          .spyOn(require("../app/format"), "formatStatus")
+          .mockImplementationOnce(doubleFormatMock);
+
+        const bills = new Bills({
+          document: document,
+          onNavigate,
+          store: mockedStore,
+          localStorage: window.localStorage,
         });
+
         const result = await bills.getBills();
-        const failedBill = result.find((bill) => bill.date === originalDate);
+
+        const failedBill = result[0];
+
         expect(failedBill.date).toBe(originalDate);
-        expect(failedBill.status).toBe(`formatted-${failedBill.status}`);
+        expect(failedBill.status).toBe(`formatted-${originalStatus}`);
+
+        // Réinitialiser les mocks
+        jest.restoreAllMocks();
       });
     });
   });
