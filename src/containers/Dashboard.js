@@ -102,13 +102,13 @@ export default class {
     }
     if (this.counter % 2 === 0) {
       bills.forEach((b) => {
-        $(`#open-bill${b.id}`).css({ background: "red" });
+        $(`#open-bill${b.id}`).css({ background: "#0D5AE5" });
       });
-      $(`#open-bill${bill.id}`).css({ background: "yellow" });
+      $(`#open-bill${bill.id}`).css({ background: "#2A2B35" });
       $(".dashboard-right-container div").html(DashboardFormUI(bill));
       $(".vertical-navbar").css({ height: "150vh" });
     } else {
-      $(`#open-bill${bill.id}`).css({ background: "green" });
+      $(`#open-bill${bill.id}`).css({ background: "#0D5AE5" });
 
       $(".dashboard-right-container div").html(`
         <div id="big-billed-icon" data-testid="big-billed-icon"> ${BigBilledIcon} </div>
