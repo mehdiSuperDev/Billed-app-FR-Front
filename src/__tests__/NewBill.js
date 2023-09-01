@@ -5,6 +5,7 @@ import { ROUTES, ROUTES_PATH } from "../constants/routes.js";
 import { fireEvent } from "@testing-library/dom";
 import "@testing-library/jest-dom";
 import mockStore from "../__mocks__/store";
+import router from "../app/Router.js";
 
 jest.mock("../app/store", () => mockStore);
 
@@ -102,4 +103,69 @@ describe("Given I am connected as an employee", () => {
       });
     });
   });
+
+  function testErrorHandling(errorCode) {
+    return async () => {
+      // Réinitialisation des mocks
+      jest.clearAllMocks();
+
+      // Configuration des spies et des mocks
+      jest.spyOn(mockStore, "bills");
+      jest.spyOn(console, "error").mockImplementation(() => {});
+
+      Object.defineProperty(window, "localStorage", {
+        value: window.localStorage,
+      });
+
+      Object.defineProperty(window, "location", {
+        value: { hash: ROUTES_PATH["NewBill"] },
+      });
+
+      window.localStorage.setItem("user", JSON.stringify({ type: "Employee" }));
+      $("body").empty().append('<div id="root"></div>');
+      router();
+
+      const onNavigate = (pathname) => {
+        document.body.innerHTML = ROUTES({ pathname });
+      };
+
+      mockStore.bills = jest.fn().mockImplementation(() => {
+        return {
+          update: () => Promise.reject(new Error(`Erreur ${errorCode}`)),
+          list: () => Promise.reject(new Error(`Erreur ${errorCode}`)),
+        };
+      });
+
+      const newBill = new NewBill({
+        document,
+        onNavigate,
+        store: mockStore,
+        localStorage: window.localStorage,
+      });
+
+      const form = screen.getByTestId("form-new-bill");
+      const handleSubmit = jest.fn((e) => newBill.handleSubmit(e));
+      form.addEventListener("submit", handleSubmit);
+
+      fireEvent.submit(form);
+      await new Promise(process.nextTick);
+
+      // Vérification que console.error a été appelé avec un objet Error contenant le bon message
+      expect(console.error).toBeCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining(`Erreur ${errorCode}`),
+        })
+      );
+    };
+  }
+
+  // Utilisation de la fonction pour créer des tests pour les codes d'erreur 500 et 404
+  test(
+    "fetches bills from mock API POST and handles 500 error",
+    testErrorHandling(500)
+  );
+  test(
+    "fetches bills from mock API POST and handles 404 error",
+    testErrorHandling(404)
+  );
 });
