@@ -23,7 +23,11 @@ const rows = (data) => {
   if (!data) {
     return "";
   }
-  data.sort((a, b) => (new Date(a.date) > new Date(b.date) ? 1 : -1));
+  data.sort((a, b) => {
+    let dateA = new Date(a.originalDate);
+    let dateB = new Date(b.originalDate);
+    return dateB - dateA;
+  });
   return data.length ? data.map((bill) => row(bill)).join("") : "";
 };
 
